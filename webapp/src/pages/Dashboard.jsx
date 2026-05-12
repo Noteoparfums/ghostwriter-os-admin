@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { generateAIResponse } from '../lib/ai';
+import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   // ─── Core State ───────────────────────────────────────────
   const [documentText, setDocumentText] = useState('');
   const [chatHistory, setChatHistory] = useState([
@@ -14,6 +17,14 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  // ─── User Session State ───────────────────────────────────
+  const [userEmail, setUserEmail] = useState('');
+  const [userTier, setUserTier] = useState('free');
+  const [userInitial, setUserInitial] = useState('U');
+
+  // ─── Copied state for toolbar ─────────────────────────────
+  const [copied, setCopied] = useState(false);
+
   // ─── Refs ─────────────────────────────────────────────────
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -22,6 +33,59 @@ export default function Dashboard() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isTyping]);
+
+  // ─── Fetch logged-in user ─────────────────────────────────
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const email = session.user.email || '';
+        setUserEmail(email);
+        setUserInitial(email.charAt(0).toUpperCase() || 'U');
+
+        // Fetch subscription tier from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', session.user.id)
+          .single();
+        if (profile?.subscription_tier) {
+          setUserTier(profile.subscription_tier);
+        }
+      }
+    };
+    loadUser();
+  }, []);
+
+  // ─── Logout ───────────────────────────────────────────────
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  // ─── Download document as .txt ────────────────────────────
+  const handleDownload = () => {
+    if (!documentText.trim()) return;
+    const blob = new Blob([documentText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ghostwriter-document.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ─── Copy all document text ───────────────────────────────
+  const handleCopyAll = async () => {
+    if (!documentText.trim()) return;
+    try {
+      await navigator.clipboard.writeText(documentText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn('Copy failed:', err);
+    }
+  };
 
   // ─── AI Message Handler ───────────────────────────────────
   const handleSendMessage = async () => {
@@ -202,12 +266,21 @@ export default function Dashboard() {
           </li>
         </ul>
 
-        <div className="mt-auto flex items-center gap-3 p-3 bg-surface-container/50 rounded-xl border border-white/5 hover:bg-white/5 transition-all duration-300 cursor-pointer">
-          <img alt="User Avatar" className="w-8 h-8 rounded-full border border-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMiCtzyaUdV4OWL8g1V34IFuksBCwTK67AtITzoXAccC-YIzco6hk8yzr0BW0boOyp24r67evOx_ioYfotiXmjcnzPJcgAY7JIKS2viY2CQwNx3Ubi0SmwtVQ_DymrEyGXad7ELnQtqYGO5a2lVzxESAs1z3rCLhouPwPNKrh0keaidouMf2Vgr45rvOBlBSVUT2tb-4ZqEQlnfgnfjmvkUfV6X_XOqFdBRuGJ2DLnLA4Y3Zmp4eJgQOE3yiP5PjLxboaHJsQM30g7" />
-          <div>
-            <p className="font-title-md text-sm text-on-surface">Alex Mercer</p>
-            <p className="font-label-sm text-[10px] text-on-surface-variant">Pro Plan</p>
+        <div className="mt-auto space-y-2">
+          <div className="flex items-center gap-3 p-3 bg-surface-container/50 rounded-xl border border-white/5">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm border border-primary/30">{userInitial}</div>
+            <div className="flex-1 min-w-0">
+              <p className="font-title-md text-sm text-on-surface truncate">{userEmail || 'Loading...'}</p>
+              <p className="font-label-sm text-[10px] text-on-surface-variant capitalize">{userTier} Plan</p>
+            </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-all duration-300 font-title-md text-sm group"
+          >
+            <span className="material-symbols-outlined text-[18px] group-hover:rotate-180 transition-transform duration-500">logout</span>
+            Sign Out
+          </button>
         </div>
       </nav>
 
@@ -246,11 +319,11 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="w-8 h-8 rounded-lg bg-surface/80 border border-white/10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-300 hover:scale-105 hover:border-primary/50" title="Download">
+              <button onClick={handleDownload} disabled={!documentText.trim()} className="w-8 h-8 rounded-lg bg-surface/80 border border-white/10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-300 hover:scale-105 hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed" title="Download as .txt">
                 <span className="material-symbols-outlined text-[18px]">download</span>
               </button>
-              <button className="w-8 h-8 rounded-lg bg-surface/80 border border-white/10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-300 hover:scale-105 hover:border-primary/50" title="Copy All">
-                <span className="material-symbols-outlined text-[18px]">content_copy</span>
+              <button onClick={handleCopyAll} disabled={!documentText.trim()} className="w-8 h-8 rounded-lg bg-surface/80 border border-white/10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-300 hover:scale-105 hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed" title={copied ? 'Copied!' : 'Copy All'}>
+                <span className="material-symbols-outlined text-[18px]">{copied ? 'check' : 'content_copy'}</span>
               </button>
             </div>
           </div>
