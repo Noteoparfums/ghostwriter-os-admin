@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Features - GhostwriterOS.ai</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#cdc0e9",
+                    "error": "#ffb4ab",
+                    "inverse-primary": "#6750a4",
+                    "on-primary-container": "#e0d2ff",
+                    "on-secondary-container": "#bfb2da",
+                    "inverse-surface": "#e6e0e9",
+                    "on-secondary-fixed-variant": "#4b4263",
+                    "on-tertiary-container": "#503d00",
+                    "surface-dim": "#141218",
+                    "secondary-fixed": "#e9ddff",
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "on-primary-fixed": "#22005d",
+                    "on-primary-fixed-variant": "#4f378a",
+                    "surface-bright": "#3b383e",
+                    "surface-container-highest": "#36343a",
+                    "surface-container-high": "#2b292f",
+                    "surface-container": "#211f24",
+                    "on-tertiary": "#3e2e00",
+                    "surface": "#141218",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed": "#241a00",
+                    "surface-tint": "#cfbcff",
+                    "primary": "#cfbcff",
+                    "tertiary-fixed-dim": "#e7c365",
+                    "on-secondary-fixed": "#1f1635",
+                    "secondary-container": "#4d4465",
+                    "primary-fixed-dim": "#cfbcff",
+                    "on-surface": "#e6e0e9",
+                    "on-surface-variant": "#cbc4d2",
+                    "primary-fixed": "#e9ddff",
+                    "background": "#141218",
+                    "outline-variant": "#494551",
+                    "secondary": "#cdc0e9",
+                    "inverse-on-surface": "#322f35",
+                    "tertiary-container": "#c9a74d",
+                    "tertiary-fixed": "#ffdf93",
+                    "surface-container-low": "#1d1b20",
+                    "on-background": "#e6e0e9",
+                    "outline": "#948e9c",
+                    "on-primary": "#381e72",
+                    "surface-container-lowest": "#0f0d13",
+                    "on-tertiary-fixed-variant": "#594400",
+                    "tertiary": "#e7c365",
+                    "on-secondary": "#342b4b",
+                    "primary-container": "#6750a4",
+                    "surface-variant": "#36343a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-padding": "2rem",
+                    "unit": "4px",
+                    "bento-gap": "1rem",
+                    "gutter": "1.5rem"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": [
+                            "Geist"
+                    ],
+                    "headline-lg": [
+                            "Geist"
+                    ],
+                    "title-md": [
+                            "Geist"
+                    ],
+                    "body-base": [
+                            "Geist"
+                    ],
+                    "display-xl": [
+                            "Geist"
+                    ],
+                    "label-sm": [
+                            "Geist"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.03em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "title-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-base": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-xl": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.04em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #050505; /* Deep Space floor */
+            color: #e6e0e9;
+        }
+        .glass-panel {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease-in-out;
+        }
+        .glass-panel:hover {
+            border-color: rgba(207, 188, 255, 0.5); /* Primary accent */
+            box-shadow: 0 0 20px rgba(207, 188, 255, 0.2), inset 0 0 15px rgba(207, 188, 255, 0.1);
+        }
+        .glow-effect {
+            box-shadow: inset 0 0 20px rgba(207, 188, 255, 0.1);
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #cfbcff, #e7c365);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="font-body-base bg-[#050505] min-h-screen flex flex-col pt-24">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter py-4 bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-xl transition-all duration-300 ease-in-out">
+<div class="font-headline-lg-mobile text-primary text-2xl tracking-tighter">
+            GhostwriterOS.ai
+        </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-title-md text-base" href="#">Features</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors font-title-md text-base hover:bg-white/5 px-3 py-1 rounded" href="#">Pricing</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors font-title-md text-base hover:bg-white/5 px-3 py-1 rounded" href="#">Documentation</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:block text-on-surface-variant hover:text-on-surface font-title-md text-base transition-colors hover:bg-white/5 px-4 py-2 rounded">
+                Login
+            </button>
+<button class="bg-primary text-on-primary font-title-md text-base px-4 sm:px-5 py-1.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_rgba(207,188,255,0.6)] transition-all duration-300">
+                Start Creating
+            </button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col px-container-padding py-10 gap-12 max-w-6xl mx-auto w-full">
+<!-- Hero Section -->
+<header class="text-center max-w-3xl mx-auto space-y-4">
+<h1 class="font-display-xl text-3xl sm:text-5xl text-gradient">Architect Your Intelligence.</h1>
+<p class="font-headline-lg text-lg sm:text-2xl text-on-surface-variant">
+                Dive deep into the core modules that power GhostwriterOS. Built for high-end creators who demand precision and control.
+            </p>
+</header>
+<!-- Feature 1: Mind Mapping for LLMs -->
+<section class="flex flex-col lg:flex-row gap-8 items-center">
+<div class="w-full lg:w-1/2 space-y-4 order-2 lg:order-1 mt-6 lg:mt-0">
+<div class="inline-flex items-center gap-1.5 bg-primary-container/20 px-2.5 py-1 rounded-full border border-primary/30 text-primary font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-xs">schema</span>
+                    Cognitive Architecture
+                </div>
+<h2 class="font-headline-lg text-2xl sm:text-3xl text-on-surface">Mind Mapping for LLMs</h2>
+<p class="font-body-base text-sm sm:text-base text-on-surface-variant">
+                    Visualize your AI's thought process. Construct intricate narrative webs, define character arcs, and establish logical dependencies before generating a single word. The node-based interface allows you to sculpt context dynamically.
+                </p>
+<ul class="space-y-2.5 font-body-base text-sm sm:text-base text-on-surface-variant mt-6">
+<li class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary mt-0.5 text-lg">check_circle</span>
+<span>Drag-and-drop context nodes to build complex prompt chains.</span>
+</li>
+<li class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary mt-0.5 text-lg">check_circle</span>
+<span>Assign weights to specific narrative elements visually.</span>
+</li>
+<li class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary mt-0.5 text-lg">check_circle</span>
+<span>Real-time logical consistency checking across nodes.</span>
+</li>
+</ul>
+</div>
+<div class="w-full lg:w-1/2 order-1 lg:order-2 h-[300px] lg:h-[400px] glass-panel rounded-xl overflow-hidden relative group">
+<!-- Mockup of Node Interface -->
+<div class="absolute inset-0 p-4 flex items-center justify-center">
+<img alt="Mind mapping interface" class="w-full h-full object-cover rounded-lg opacity-60 mix-blend-screen" data-alt="A highly detailed, cinematic dark-mode UI mockup showing a node-based mind mapping interface. Glowing lines connect floating geometric modules containing text. The aesthetic is deep space minimalism with sharp emerald and purple neon accents indicating active connections. The visual style is glassmorphic, tech-noir, and highly sophisticated, suitable for a professional AI workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4RgIPnuXqMzuoaxcWBrfIgNiLI_DctiZ9Vdi-8_7H83AN-fA6Q3IaY-81WM8vByKNrcJ3cPeyqpXgjvGFW0gGCgJzUTKWK9ra6E7TWGvXa_cjwBY3Os7Qp-v8RRznvb3bXkMyMPIACHqTCxgANtpsC3ODt2YGv8I0EHpa6XWPqBNxECsyKL4-byazJJ0vLrx_tYSi6BMI5wjoXqOqyEtq4-tjci1RXPFU-CvwCZfxUFCamLmPU8jLZdEvxq5TyRmLX7LGAnBra1-S"/>
+<!-- Overlay UI Elements to simulate the interface -->
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+<div class="w-32 sm:w-40 h-16 sm:h-20 bg-surface-container-highest/80 backdrop-blur-md rounded-lg border border-primary/50 absolute top-1/4 left-1/4 flex flex-col p-2 shadow-lg glow-effect">
+<span class="font-title-md text-xs sm:text-sm text-primary mb-0.5">Character Arc</span>
+<span class="font-label-sm text-[10px] sm:text-xs text-on-surface-variant">Weight: 0.85</span>
+</div>
+<div class="w-40 sm:w-56 h-20 sm:h-24 bg-surface-container-highest/80 backdrop-blur-md rounded-lg border border-tertiary/50 absolute bottom-1/4 right-1/4 flex flex-col p-2 shadow-lg">
+<span class="font-title-md text-xs sm:text-sm text-tertiary mb-0.5">Plot Twist Trigger</span>
+<span class="font-label-sm text-[10px] sm:text-xs text-on-surface-variant">Depends on: Node A</span>
+</div>
+<!-- SVG line connecting them roughly -->
+<svg class="absolute inset-0 w-full h-full" style="z-index: -1;">
+<line class="opacity-50" stroke="#cfbcff" stroke-dasharray="5,5" stroke-width="1.5" x1="35%" x2="65%" y1="35%" y2="65%"></line>
+</svg>
+</div>
+</div>
+</div>
+</section>
+<!-- Feature 2: Source-Driven Generation -->
+<section class="flex flex-col lg:flex-row gap-8 items-center mt-8">
+<div class="w-full lg:w-1/2 h-[300px] lg:h-[400px] glass-panel rounded-xl overflow-hidden relative p-4 mb-6 lg:mb-0">
+<!-- Mockup of Source Library -->
+<div class="h-full w-full flex flex-col gap-3">
+<div class="flex justify-between items-center mb-1">
+<span class="font-title-md text-sm sm:text-base text-on-surface font-semibold">Source Matrix</span>
+<span class="material-symbols-outlined text-primary text-xl">filter_list</span>
+</div>
+<!-- Source Items -->
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(207,188,255,0.2)] transition-all duration-300 cursor-pointer">
+<div class="bg-primary/20 p-1.5 rounded text-primary">
+<span class="material-symbols-outlined text-sm sm:text-base">picture_as_pdf</span>
+</div>
+<div class="flex-grow">
+<div class="font-title-md text-xs sm:text-sm text-on-surface">Quantum Mechanics Primer.pdf</div>
+<div class="font-label-sm text-[10px] sm:text-[11px] text-on-surface-variant">Analyzed • 45 pages • 98% Relevance</div>
+</div>
+<div class="hidden sm:block w-12 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-[98%] h-full bg-primary"></div>
+</div>
+</div>
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(207,188,255,0.2)] transition-all duration-300 cursor-pointer">
+<div class="bg-tertiary/20 p-1.5 rounded text-tertiary">
+<span class="material-symbols-outlined text-sm sm:text-base">link</span>
+</div>
+<div class="flex-grow">
+<div class="font-title-md text-xs sm:text-sm text-on-surface">Historical Timeline DB</div>
+<div class="font-label-sm text-[10px] sm:text-[11px] text-on-surface-variant">Live Sync • 12k entries • 75% Relevance</div>
+</div>
+<div class="hidden sm:block w-12 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-[75%] h-full bg-tertiary"></div>
+</div>
+</div>
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(207,188,255,0.2)] transition-all duration-300 cursor-pointer opacity-60">
+<div class="bg-surface-container-highest p-1.5 rounded text-on-surface-variant">
+<span class="material-symbols-outlined text-sm sm:text-base">article</span>
+</div>
+<div class="flex-grow">
+<div class="font-title-md text-xs sm:text-sm text-on-surface">Character Bios V2.txt</div>
+<div class="font-label-sm text-[10px] sm:text-[11px] text-on-surface-variant">Processing...</div>
+</div>
+<span class="material-symbols-outlined animate-spin text-on-surface-variant text-sm sm:text-base">sync</span>
+</div>
+</div>
+</div>
+<div class="w-full lg:w-1/2 space-y-4 pl-0 lg:pl-8">
+<div class="inline-flex items-center gap-1.5 bg-tertiary-container/20 px-2.5 py-1 rounded-full border border-tertiary/30 text-tertiary font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-xs">database</span>
+                    Ground Truth Control
+                </div>
+<h2 class="font-headline-lg text-2xl sm:text-3xl text-on-surface">Source-Driven Generation</h2>
+<p class="font-body-base text-sm sm:text-base text-on-surface-variant">
+                    Anchor your AI's outputs to reality—or your custom reality. Upload PDFs, connect live databases, or link external repositories. GhostwriterOS strictly references your curated library, eliminating hallucinations and ensuring absolute tonal consistency.
+                </p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+<div class="glass-panel p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary mb-1.5 block text-2xl">verified_user</span>
+<h3 class="font-title-md text-sm sm:text-base text-on-surface mb-0.5">Zero Hallucinations</h3>
+<p class="font-label-sm text-xs text-on-surface-variant">Strict bounding to provided context windows.</p>
+</div>
+<div class="glass-panel p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary mb-1.5 block text-2xl">hub</span>
+<h3 class="font-title-md text-sm sm:text-base text-on-surface mb-0.5">Vector Search</h3>
+<p class="font-label-sm text-xs text-on-surface-variant">Lightning-fast semantic retrieval across gigabytes of text.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-gutter flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-white/5 opacity-80 hover:opacity-100 transition-opacity mt-16 gap-4 md:gap-0">
+<div class="font-title-md text-base text-on-surface">
+            GhostwriterOS.ai
+        </div>
+<div class="font-body-base text-xs text-on-surface-variant text-center md:text-left">
+            © 2024 GhostwriterOS.ai. Quiet Luxury for Power Users.
+        </div>
+<div class="flex flex-wrap justify-center gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-base text-xs" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-base text-xs" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-base text-xs" href="#">Status</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-base text-xs" href="#">Contact</a>
+</div>
+</footer>
+</body></html>
