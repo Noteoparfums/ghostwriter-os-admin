@@ -1,10 +1,11 @@
-export const generateAIResponse = async (prompt) => {
+export const generateAIResponse = async (prompt, documentContext = '') => {
   const apiKey = import.meta.env.VITE_OLLAMA_API_KEY;
-  // Defaulting to typical Ollama generation API, but this could be a chat completion endpoint
-  // if it's an OpenAI compatible API based on the format.
-  // Wait, looking at the key format: "fb3fb3b8cf0443a592eabb0704854c0c.g-eMJkPU7yaUZY0jg23_P3xT"
-  // It could be a custom API.
   const apiUrl = import.meta.env.VITE_OLLAMA_API_URL || 'http://localhost:11434/api/generate';
+
+  // Build a context-aware prompt when document text is present
+  const fullPrompt = documentContext.trim()
+    ? `You are GhostwriterOS, an elite AI writing assistant. The user is currently working on the following document:\n\n---\n${documentContext}\n---\n\nUser's request: ${prompt}\n\nProvide a helpful, well-written response. If the user asks you to write or expand content, produce polished prose ready to be inserted directly into their document.`
+    : `You are GhostwriterOS, an elite AI writing assistant.\n\nUser's request: ${prompt}\n\nProvide a helpful, well-written response.`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -14,8 +15,8 @@ export const generateAIResponse = async (prompt) => {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama3', // Typical default, can be parameterized
-        prompt: prompt,
+        model: 'llama3',
+        prompt: fullPrompt,
         stream: false,
       }),
     });
