@@ -9,6 +9,8 @@ import Pricing from './pages/Pricing';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
+import ComingSoon from './pages/ComingSoon';
+import Profile from './pages/Profile';
 
 const ProtectedRoute = ({ children }) => {
   const [session, setSession] = useState(null);
@@ -64,6 +66,26 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/maps" element={
+          <ProtectedRoute>
+            <ComingSoon title="My Maps" icon="hub" />
+          </ProtectedRoute>
+        } />
+        <Route path="/knowledge" element={
+          <ProtectedRoute>
+            <ComingSoon title="Knowledge Base" icon="database" />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <ComingSoon title="Settings" icon="settings" />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } />
 

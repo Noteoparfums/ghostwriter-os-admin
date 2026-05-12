@@ -7,6 +7,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // ─── Core State ───────────────────────────────────────────
+  const [documentId, setDocumentId] = useState(null);
+  const [documentTitle, setDocumentTitle] = useState('Untitled Document');
   const [documentText, setDocumentText] = useState('');
   const [chatHistory, setChatHistory] = useState([
     {
@@ -16,6 +18,8 @@ export default function Dashboard() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
+  const [isNewProjectLoading, setIsNewProjectLoading] = useState(false);
 
   // ─── User Session State ───────────────────────────────────
   const [userEmail, setUserEmail] = useState('');
@@ -34,28 +38,113 @@ export default function Dashboard() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isTyping]);
 
-  // ─── Fetch logged-in user ─────────────────────────────────
+  // ─── Fetch logged-in user & Initial Data ──────────────────
   useEffect(() => {
-    const loadUser = async () => {
+    const loadData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const email = session.user.email || '';
         setUserEmail(email);
         setUserInitial(email.charAt(0).toUpperCase() || 'U');
 
-        // Fetch subscription tier from profiles
+        // Fetch subscription tier
         const { data: profile } = await supabase
           .from('profiles')
           .select('subscription_tier')
           .eq('id', session.user.id)
           .single();
-        if (profile?.subscription_tier) {
-          setUserTier(profile.subscription_tier);
+        if (profile?.subscription_tier) setUserTier(profile.subscription_tier);
+
+        // Load latest document
+        const { data: docs, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('is_archived', false)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (docs && docs.length > 0) {
+          const doc = docs[0];
+          setDocumentId(doc.id);
+          setDocumentTitle(doc.title);
+          setDocumentText(doc.content);
+          if (doc.chat_history && doc.chat_history.length > 0) {
+            setChatHistory(doc.chat_history);
+          }
+        } else {
+          // No documents yet, create one
+          handleNewProject();
         }
       }
     };
-    loadUser();
+    loadData();
   }, []);
+
+  // ─── Auto-Save Logic ──────────────────────────────────────
+  useEffect(() => {
+    if (!documentId) return;
+
+    setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('documents')
+          .update({
+            title: documentTitle,
+            content: documentText,
+            chat_history: chatHistory,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', documentId);
+        
+        if (error) throw error;
+        setSaveStatus('saved');
+      } catch (err) {
+        console.error('Save error:', err);
+        setSaveStatus('error');
+      }
+    }, 1500); // Debounce save by 1.5s
+
+    return () => clearTimeout(timer);
+  }, [documentText, documentTitle, chatHistory, documentId]);
+
+  // ─── Create New Project ───────────────────────────────────
+  const handleNewProject = async () => {
+    setIsNewProjectLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .insert({
+          user_id: session.user.id,
+          title: 'Untitled Document',
+          content: '',
+          chat_history: [
+            {
+              role: 'assistant',
+              content: 'New project started. I\'m ready to help you create something amazing.',
+            },
+          ]
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setDocumentId(data.id);
+      setDocumentTitle(data.title);
+      setDocumentText(data.content);
+      setChatHistory(data.chat_history);
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('Error creating new project:', err);
+    } finally {
+      setIsNewProjectLoading(false);
+    }
+  };
 
   // ─── Logout ───────────────────────────────────────────────
   const handleLogout = async () => {
@@ -143,19 +232,51 @@ export default function Dashboard() {
     {
       icon: 'psychology',
       label: 'Expand this section',
-      description: 'Elaborate on the current document content.',
+      description: 'Elaborate on current text.',
       color: 'primary',
     },
     {
       icon: 'edit_note',
       label: 'Improve the writing',
-      description: 'Refine tone, clarity, and flow.',
+      description: 'Refine tone & flow.',
       color: 'tertiary',
+    },
+    {
+      icon: 'format_list_bulleted',
+      label: 'Draft an Outline',
+      description: 'Create a structure.',
+      color: 'secondary',
+    },
+    {
+      icon: 'summarize',
+      label: 'Summarize Context',
+      description: 'Condense main points.',
+      color: 'primary',
     },
   ];
 
-  const handleSuggestedPrompt = (label) => {
+  const handleSuggestedPrompt = async (label) => {
     setChatInput(label);
+    // Use a small timeout to ensure state is updated if using direct ref for sending, 
+    // but here we can just pass the label directly to a helper
+    await triggerAISend(label);
+  };
+
+  const triggerAISend = async (text) => {
+    if (!text.trim() || isTyping) return;
+    
+    setChatHistory((prev) => [...prev, { role: 'user', content: text }]);
+    setChatInput('');
+    setIsTyping(true);
+
+    try {
+      const response = await generateAIResponse(text, documentText);
+      setChatHistory((prev) => [...prev, { role: 'assistant', content: response }]);
+    } catch (error) {
+      setChatHistory((prev) => [...prev, { role: 'assistant', content: `⚠ Error: ${error.message}`, isError: true }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   // ─── Word count ───────────────────────────────────────────
@@ -222,21 +343,27 @@ export default function Dashboard() {
       {/* ═══════════════════ SideNavBar ═══════════════════ */}
       <nav className="flex flex-col h-screen p-4 fixed left-0 top-0 bg-surface-container-lowest w-56 border-r border-white/5 z-50 transform -translate-x-full peer-checked:translate-x-0 lg:translate-x-0 transition-transform duration-300">
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">G</div>
+          <Link to="/" className="flex items-center gap-2 group transition-all duration-300 hover:scale-105">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm group-hover:shadow-[0_0_15px_rgba(207,188,255,0.4)]">G</div>
             <div>
               <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter" style={{ fontSize: '1.125rem', lineHeight: '1.25rem' }}>GhostwriterOS</h1>
               <p className="font-label-sm text-[10px] text-primary/70">Elite Creator</p>
             </div>
-          </div>
+          </Link>
           <label className="lg:hidden text-on-surface-variant hover:text-on-surface cursor-pointer" htmlFor="sidebar-toggle">
             <span className="material-symbols-outlined text-[20px]">close</span>
           </label>
         </div>
 
-        <button className="mb-6 w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg py-2 px-3 font-title-md text-sm flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(207,188,255,0.4)]">
-          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-          New Project
+        <button 
+          onClick={handleNewProject}
+          disabled={isNewProjectLoading}
+          className="mb-6 w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg py-2 px-3 font-title-md text-sm flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(207,188,255,0.4)] disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            {isNewProjectLoading ? 'progress_activity' : 'add'}
+          </span>
+          {isNewProjectLoading ? 'Creating...' : 'New Project'}
         </button>
 
         <ul className="flex flex-col gap-1 flex-grow">
@@ -247,33 +374,34 @@ export default function Dashboard() {
             </Link>
           </li>
           <li>
-            <a className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm" href="#">
+            <Link to="/maps" className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm">
               <span className="material-symbols-outlined text-[20px]">hub</span>
               My Maps
-            </a>
+            </Link>
           </li>
           <li>
-            <a className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm" href="#">
+            <Link to="/knowledge" className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm">
               <span className="material-symbols-outlined text-[20px]">database</span>
               Knowledge Base
-            </a>
+            </Link>
           </li>
           <li>
-            <a className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm" href="#">
+            <Link to="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:scale-105 font-title-md text-sm">
               <span className="material-symbols-outlined text-[20px]">settings</span>
               Settings
-            </a>
+            </Link>
           </li>
         </ul>
 
         <div className="mt-auto space-y-2">
-          <div className="flex items-center gap-3 p-3 bg-surface-container/50 rounded-xl border border-white/5">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm border border-primary/30">{userInitial}</div>
+          <Link to="/profile" className="flex items-center gap-3 p-3 bg-surface-container/50 rounded-xl border border-white/5 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] block group">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm border border-primary/30 group-hover:bg-primary group-hover:text-on-primary transition-all">{userInitial}</div>
             <div className="flex-1 min-w-0">
-              <p className="font-title-md text-sm text-on-surface truncate">{userEmail || 'Loading...'}</p>
+              <p className="font-title-md text-sm text-on-surface truncate group-hover:text-primary transition-colors">{userEmail || 'Loading...'}</p>
               <p className="font-label-sm text-[10px] text-on-surface-variant capitalize">{userTier} Plan</p>
             </div>
-          </div>
+            <span className="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary">chevron_right</span>
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-all duration-300 font-title-md text-sm group"
@@ -305,17 +433,34 @@ export default function Dashboard() {
           {/* Editor Top Bar */}
           <div className="flex items-center justify-between p-3 lg:p-4 border-b border-white/5 bg-surface/60 backdrop-blur-xl z-10">
             <div className="flex items-center gap-3">
-              <div className="bg-surface-container-highest/80 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
+              <div className="bg-surface-container-highest/80 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2 focus-within:border-primary/50 transition-all">
                 <span className="material-symbols-outlined text-primary text-lg">edit_document</span>
-                <h2 className="font-title-md text-xs sm:text-sm text-on-surface">Untitled Document</h2>
+                <input 
+                  type="text" 
+                  className="bg-transparent border-none p-0 focus:ring-0 font-title-md text-xs sm:text-sm text-on-surface w-32 sm:w-48 outline-none"
+                  value={documentTitle}
+                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  placeholder="Document Title"
+                />
               </div>
-              <div className="hidden sm:flex items-center gap-2 text-on-surface-variant">
-                <span className="font-label-sm text-[10px] bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                  {wordCount} words
-                </span>
-                <span className="font-label-sm text-[10px] bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                  {charCount} chars
-                </span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : 
+                    saveStatus === 'error' ? 'bg-red-500' : 'bg-emerald-400'
+                  }`}></span>
+                  <span className="font-label-sm text-[9px] text-on-surface-variant uppercase tracking-wider">
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'error' ? 'Save Error' : 'Saved'}
+                  </span>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-on-surface-variant">
+                  <span className="font-label-sm text-[10px] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                    {wordCount} words
+                  </span>
+                  <span className="font-label-sm text-[10px] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                    {charCount} chars
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -419,18 +564,18 @@ Tips:
           {chatHistory.length <= 1 && !isTyping && (
             <div className="px-3 pb-2">
               <p className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 px-1">Suggested Prompts</p>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {suggestedPrompts.map((prompt, i) => (
                   <button
                     key={i}
                     onClick={() => handleSuggestedPrompt(prompt.label)}
-                    className={`bg-surface-container border border-white/5 hover:border-${prompt.color}/50 hover:bg-${prompt.color}/5 rounded-lg p-2.5 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(207,188,255,0.2)] group flex items-start gap-2.5`}
+                    className={`bg-surface-container border border-white/5 hover:border-${prompt.color}/50 hover:bg-${prompt.color}/5 rounded-lg p-2 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(207,188,255,0.2)] group flex flex-col gap-1`}
                   >
-                    <span className={`material-symbols-outlined text-${prompt.color}/70 group-hover:text-${prompt.color} text-[16px] mt-0.5 transition-colors duration-300`}>{prompt.icon}</span>
-                    <div>
-                      <span className={`block font-title-md text-[11px] text-on-surface group-hover:text-${prompt.color} transition-colors duration-300`}>{prompt.label}</span>
-                      <span className="block font-body-base text-[9px] text-on-surface-variant mt-0.5">{prompt.description}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`material-symbols-outlined text-${prompt.color}/70 group-hover:text-${prompt.color} text-[14px] transition-colors duration-300`}>{prompt.icon}</span>
+                      <span className={`block font-title-md text-[10px] text-on-surface group-hover:text-${prompt.color} transition-colors duration-300`}>{prompt.label}</span>
                     </div>
+                    <span className="block font-body-base text-[8px] text-on-surface-variant line-clamp-1">{prompt.description}</span>
                   </button>
                 ))}
               </div>
